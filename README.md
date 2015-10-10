@@ -1,7 +1,13 @@
-# geo
-offline-country-reverse-geocoder with golang 
+# geo country reverse
+[offline-country-reverse-geocoder]( https://github.com/daveross/offline-country-reverse-geocoder) with golang 
 
-# use
+
+# how to use
+
+```golang
+go get github.com/AsGz/geo/georeverse
+```
+
 ```golang
 package main
 
