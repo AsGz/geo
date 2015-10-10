@@ -14,7 +14,7 @@ package main
 import (
 	"fmt"
 
-	"./georeverse"
+	"github.com/AsGz/geo/georeverse"
 )
 
 func main() {
