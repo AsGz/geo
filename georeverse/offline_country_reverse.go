@@ -17,9 +17,14 @@ const (
 	POLYGONS_SPLIT = ")),(("
 )
 
+type Point struct {
+	x float64
+	y float64
+}
+
 type CountryPolygon struct {
 	CountryCode string
-	PonitList   string
+	PointList   []*Point
 }
 
 type CountryReverser struct {
@@ -33,6 +38,22 @@ func myTrim(src string) string {
 	return src
 }
 
+func stringToListOfPoints(src string) []*Point {
+	points := strings.Split(src, ",")
+	output := make([]*Point, 0)
+	for _, p := range points {
+		p = myTrim(p)
+		info := strings.Split(p, " ")
+		pX, _ := strconv.ParseFloat(info[0], 64)
+		pY, _ := strconv.ParseFloat(info[1], 64)
+
+		point := &Point{pX, pY}
+		output = append(output, point)
+	}
+
+	return output
+}
+
 func NewCountryReverser(dataPath string) (*CountryReverser, error) {
 	c := new(CountryReverser)
 	err := c.load(dataPath)
@@ -41,7 +62,7 @@ func NewCountryReverser(dataPath string) (*CountryReverser, error) {
 
 func (c *CountryReverser) GetCountryCode(longitude, latitude float64) string {
 	for _, poly := range c.allCountryPolygonInfo {
-		if c.pointInPolygon(longitude, latitude, poly.PonitList) {
+		if c.pointInPolygon(longitude, latitude, poly.PointList) {
 			return poly.CountryCode
 		}
 	}
@@ -70,13 +91,13 @@ func (c *CountryReverser) load(filePath string) error {
 		var polyInfo CountryPolygon
 		if POLYGON == strings.ToUpper(polygonType) {
 			polyInfo.CountryCode = countryCode
-			polyInfo.PonitList = data
+			polyInfo.PointList = stringToListOfPoints(data)
 			c.allCountryPolygonInfo = append(c.allCountryPolygonInfo, polyInfo)
 		} else if MULTI_POLYGON == strings.ToUpper(polygonType) {
 			polygons := strings.Split(data, POLYGONS_SPLIT)
 			for _, p := range polygons {
 				polyInfo.CountryCode = countryCode
-				polyInfo.PonitList = p
+				polyInfo.PointList = stringToListOfPoints(p)
 				c.allCountryPolygonInfo = append(c.allCountryPolygonInfo, polyInfo)
 			}
 		}
@@ -89,36 +110,22 @@ func (c *CountryReverser) load(filePath string) error {
 
 //计算一个点是不是在多边形里面
 //参考：http://alienryderflex.com/polygon/
-func (c *CountryReverser) pointInPolygon(targetX, targetY float64, pointsList string) bool {
-	var polyX, polyY []float64
-	points := strings.Split(pointsList, ",")
-	polyCorners := len(points)
-	for _, p := range points {
-		p = myTrim(p)
-		info := strings.Split(p, " ")
-		pX, _ := strconv.ParseFloat(info[0], 64)
-		pY, _ := strconv.ParseFloat(info[1], 64)
-		/**
-		 * Performance optimization:
-		 * If the first pair of coordinates are more than 90deg
-		 * (1/4 of the Earth's circumference) in any direction,
-		 * the answer is "no".
-		 */
-		if pX != 0 && int(math.Abs(pY-targetY)) > 90 {
+func (c *CountryReverser) pointInPolygon(targetX, targetY float64, pointsList []*Point) bool {
+	polyCorners := len(pointsList)
+	for _, p := range pointsList {
+		if p.x != 0 && int(math.Abs(p.y-targetY)) > 90 {
 			return false
 		}
-		if pY != 0 && int(math.Abs(pX-targetX)) > 90 {
+		if p.y != 0 && int(math.Abs(p.x-targetX)) > 90 {
 			return false
 		}
-		polyX = append(polyX, pX)
-		polyY = append(polyY, pY)
 	}
 	j := polyCorners - 1
 	oddNodes := false
 	for i := 0; i < polyCorners; i++ {
-		if polyY[i] < targetY && polyY[j] >= targetY || polyY[j] < targetY && polyY[i] >= targetY {
-			if polyX[i] <= targetX || polyX[j] <= targetX {
-				oddNodes = (oddNodes != (polyX[i]+(targetY-polyY[i])/(polyY[j]-polyY[i])*(polyX[j]-polyX[i]) < targetX))
+		if pointsList[i].y < targetY && pointsList[j].y >= targetY || pointsList[j].y < targetY && pointsList[i].y >= targetY {
+			if pointsList[i].x <= targetX || pointsList[j].x <= targetX {
+				oddNodes = (oddNodes != (pointsList[i].x+(targetY-pointsList[i].y)/(pointsList[j].y-pointsList[i].y)*(pointsList[j].x-pointsList[i].x) < targetX))
 			}
 		}
 		j = i
