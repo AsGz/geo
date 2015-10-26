@@ -31,7 +31,7 @@ type CountryReverser struct {
 	allCountryPolygonInfo []CountryPolygon
 }
 
-func myTrim(src string) string {
+func trimWithSpecialChar(src string) string {
 	src = strings.TrimSpace(src)
 	src = strings.Trim(src, "(")
 	src = strings.Trim(src, ")")
@@ -42,7 +42,7 @@ func stringToListOfPoints(src string) []*Point {
 	points := strings.Split(src, ",")
 	output := make([]*Point, 0)
 	for _, p := range points {
-		p = myTrim(p)
+		p = trimWithSpecialChar(p)
 		info := strings.Split(p, " ")
 		pX, _ := strconv.ParseFloat(info[0], 64)
 		pY, _ := strconv.ParseFloat(info[1], 64)
@@ -87,7 +87,7 @@ func (c *CountryReverser) load(filePath string) error {
 		data := info[1]
 		pointInfo := strings.SplitN(data, " ", 2)
 		polygonType := pointInfo[0]
-		data = myTrim(pointInfo[1])
+		data = trimWithSpecialChar(pointInfo[1])
 		var polyInfo CountryPolygon
 		if POLYGON == strings.ToUpper(polygonType) {
 			polyInfo.CountryCode = countryCode
