@@ -81,6 +81,9 @@ func (c *CountryReverser) load(filePath string) error {
 	var line string
 	for {
 		line, err = rd.ReadString('\n')
+		if io.EOF == err {
+			break
+		}
 		line = strings.TrimSpace(line)
 		info := strings.SplitN(line, "=", 2)
 		countryCode := info[0]
@@ -100,9 +103,6 @@ func (c *CountryReverser) load(filePath string) error {
 				polyInfo.PointList = stringToListOfPoints(p)
 				c.allCountryPolygonInfo = append(c.allCountryPolygonInfo, polyInfo)
 			}
-		}
-		if io.EOF == err {
-			break
 		}
 	}
 	return nil
